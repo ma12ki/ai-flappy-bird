@@ -15,7 +15,13 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: {
-                y: 200,
+                y: 0,
+            },
+            checkCollision: {
+                up: true,
+                down: true,
+                left: false,
+                right: false,
             },
             debug: true,
         },
