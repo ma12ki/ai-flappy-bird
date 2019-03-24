@@ -99,13 +99,7 @@
         ],
         "no-underscore-dangle": "off",
         "no-whitespace-before-property": "error",
-        "object-curly-newline": [
-            "error",
-            {
-                "multiline": true,
-                "minProperties": 1
-            }
-        ],
+        "object-curly-newline": "off",
         "one-var-declaration-per-line": ["error", "initializations"],
         "quote-props": ["error", "as-needed"],
         "quotes": ["error", "single"],
