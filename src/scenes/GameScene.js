@@ -135,10 +135,16 @@ class GameScene extends Phaser.Scene {
             if (bird.body.enable === false) {
                 return;
             }
-            if (bird === object1 || bird === object2) {
+            if (
+                bird === object1 ||
+                bird === object2 ||
+                (object1.gameObject && !object2 && object1.gameObject === bird)
+            ) {
                 bird.body.enable = false;
+                bird.visible = false;
                 return;
             }
+
             hasAliveBirds = true;
         });
 
@@ -162,6 +168,7 @@ class GameScene extends Phaser.Scene {
             bird.y = 300;
             bird.body.setVelocity(0, 0);
             bird.body.enable = true;
+            bird.visible = true;
         });
     }
 }
