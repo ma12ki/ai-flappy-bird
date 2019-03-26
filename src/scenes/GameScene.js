@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 
+import Bird from '../entities/Bird';
+
 class GameScene extends Phaser.Scene {
-    constructor(test) {
+    constructor() {
         super({
             key: 'GameScene',
         });
@@ -18,23 +20,18 @@ class GameScene extends Phaser.Scene {
         this.add.image(400, 300, 'bg').setScrollFactor(0);
 
         // walls
-        this.walls = this.physics.add.group();
+        this.wallGroup = this.physics.add.group();
         this.wallArray = [
             this.createWall(Math.floor(700 + Math.random() * 100)),
             this.createWall(Math.floor(1100 + Math.random() * 200)),
             this.createWall(Math.floor(1700 + Math.random() * 300)),
         ];
 
-        // bird
-        this.bird = this.physics.add.sprite(300, 300, 'bird');
-        this.bird.setCollideWorldBounds(true);
-        this.bird.setGravityY(2000);
-        this.bird.body.onCollide = true;
-        this.bird.body.onWorldBounds = true;
-        this.bird.body.velocity.setTo(0, 0);
-        this.input.keyboard.on('keydown_SPACE', event => {
-            this.bird.body.setVelocityY(-400);
-        });
+        // birds
+        this.birdGroup = this.physics.add.group();
+        this.birds = new Array(3)
+            .fill(0)
+            .map((_, i) => Bird(this, this.birdGroup, i));
 
         // stats
         this.iterations = {
@@ -60,22 +57,22 @@ class GameScene extends Phaser.Scene {
         };
 
         // colliders
-        this.physics.add.collider(this.bird, this.walls);
+        this.physics.add.collider(this.birdGroup, this.wallGroup);
 
         // collision event listeners
-        this.physics.world.on('collide', this.resetGame.bind(this));
-        this.physics.world.on('worldbounds', this.resetGame.bind(this));
+        this.physics.world.on('collide', this.killBird.bind(this));
+        this.physics.world.on('worldbounds', this.killBird.bind(this));
 
         // camera
-        this.cameras.main.startFollow(this.bird, true, 1, 0);
+        this.cameras.main.startFollow(this.birds[0], true, 1, 0);
     }
 
     createWall(x, y = Math.floor(Math.random() * 500 + 100)) {
         const [yTop, yBottom] = this.calcWallPartsY(y);
-        const top = this.walls.create(x, yTop, 'wall');
+        const top = this.wallGroup.create(x, yTop, 'wall');
         top.body.setVelocityX(-140);
         top.body.immovable = true;
-        const bottom = this.walls.create(x, yBottom, 'wall');
+        const bottom = this.wallGroup.create(x, yBottom, 'wall');
         bottom.body.setVelocityX(-140);
         bottom.body.immovable = true;
         return { top, bottom };
@@ -131,19 +128,41 @@ class GameScene extends Phaser.Scene {
         this.iterations.text.setText(`Iterations: ${this.iterations.count}`);
     }
 
+    killBird(object1, object2) {
+        let hasAliveBirds = false;
+
+        this.birds.forEach(bird => {
+            if (bird.body.enable === false) {
+                return;
+            }
+            if (bird === object1 || bird === object2) {
+                bird.body.enable = false;
+                return;
+            }
+            hasAliveBirds = true;
+        });
+
+        if (!hasAliveBirds) {
+            this.resetGame();
+        }
+    }
+
     resetGame() {
         this.updateIterations();
         this.updateHighScore();
         this.score.pts = 0;
         this.updateScore();
         this.updateWalls(600);
-        this.resetBird();
+        this.resetBirds();
     }
 
-    resetBird() {
-        this.bird.x = 300;
-        this.bird.y = 300;
-        this.bird.body.setVelocity(0, 0);
+    resetBirds() {
+        this.birds.forEach(bird => {
+            bird.x = 300;
+            bird.y = 300;
+            bird.body.setVelocity(0, 0);
+            bird.body.enable = true;
+        });
     }
 }
 
