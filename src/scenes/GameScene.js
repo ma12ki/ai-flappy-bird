@@ -132,16 +132,15 @@ class GameScene extends Phaser.Scene {
         let hasAliveBirds = false;
 
         this.birds.forEach(bird => {
-            if (bird.body.enable === false) {
+            if (!bird.alive) {
                 return;
             }
             if (
                 bird === object1 ||
                 bird === object2 ||
-                (object1.gameObject && !object2 && object1.gameObject === bird)
+                (object1.gameObject && object1.gameObject === bird)
             ) {
-                bird.body.enable = false;
-                bird.visible = false;
+                bird.kill();
                 return;
             }
 
@@ -163,13 +162,7 @@ class GameScene extends Phaser.Scene {
     }
 
     resetBirds() {
-        this.birds.forEach(bird => {
-            bird.x = 300;
-            bird.y = 300;
-            bird.body.setVelocity(0, 0);
-            bird.body.enable = true;
-            bird.visible = true;
-        });
+        this.birds.forEach(bird => bird.resurrect());
     }
 }
 
