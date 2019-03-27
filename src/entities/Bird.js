@@ -1,5 +1,3 @@
-// import Phaser from 'phaser';
-
 const Bird = (game, group, index) => {
     const sprite = group.create(300, 300, 'bird');
 
