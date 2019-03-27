@@ -1,5 +1,11 @@
+import Phaser from 'phaser';
+
+const hsv = Phaser.Display.Color.HSVColorWheel();
+
 const Bird = (game, group, index) => {
     const sprite = group.create(300, 300, 'bird');
+
+    sprite.setTint(hsv[Phaser.Math.Between(0, 359)].color);
 
     sprite.setCollideWorldBounds(true);
     sprite.setGravityY(2000);
