@@ -1,8 +1,10 @@
 // let _id = 0;
 
 const velocityX = -140;
+const halfWallHeight = 400;
+const halfGapHeight = 60;
 
-const WallPair = (game, group, x, y = getRandomY()) => {
+const WallPair = (game, group, x, y = getRandomCenterY()) => {
     const top = group.create(x, calcTopPartY(y), 'wall');
     const bottom = group.create(x, calcBottomPartY(y), 'wall');
 
@@ -29,7 +31,7 @@ const WallPair = (game, group, x, y = getRandomY()) => {
                 .reduce((max, wall) => Math.max(max, wall.x), 0);
 
             const newX = getRandomX(validWallMaxX);
-            const newY = getRandomY();
+            const newY = getRandomCenterY();
 
             top.x = newX;
             bottom.x = newX;
@@ -51,9 +53,14 @@ const WallPair = (game, group, x, y = getRandomY()) => {
     return { top, bottom, update, pause, unpause };
 };
 
-const getRandomY = () => Math.floor(Math.random() * 500 + 100);
-const calcTopPartY = centerY => centerY - 450 - 60;
-const calcBottomPartY = centerY => centerY - 450 + 800 + 60;
+const getRandomCenterY = () => {
+    const vCenter = 300;
+    const shift = Math.floor(Math.random() * 220);
+
+    return Math.random() > 0.5 ? vCenter + shift : vCenter - shift;
+};
+const calcTopPartY = centerY => centerY - halfWallHeight - halfGapHeight;
+const calcBottomPartY = centerY => centerY + halfWallHeight + halfGapHeight;
 const isValidX = (x, minX = -160) => x > minX && x < 1800;
 const getRandomX = lowerBound =>
     lowerBound + Math.floor(400 + Math.random() * 100);
