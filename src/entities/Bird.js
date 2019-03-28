@@ -13,11 +13,13 @@ const Bird = (game, group, index) => {
     sprite.body.onWorldBounds = true;
     sprite.body.velocity.setTo(0, 0);
 
-    game.input.keyboard.on('keydown_SPACE', event => {
-        sprite.body.setVelocityY(-400 + Math.random() * 30 * (index + 1));
-    });
-
     // extra attrs
+
+    sprite.flap = () => {
+        sprite.body.setVelocityY(-400 + Math.random() * 30 * (index + 1));
+    };
+
+    game.input.keyboard.on('keydown_SPACE', sprite.flap);
 
     sprite.alive = true;
 
