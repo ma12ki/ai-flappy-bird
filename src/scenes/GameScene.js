@@ -26,6 +26,8 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
+        this.paused = false;
+
         // background
         this.add.image(400, 300, 'bg').setScrollFactor(0);
 
@@ -53,30 +55,8 @@ class GameScene extends Phaser.Scene {
         this.birdGroup = this.physics.add.group();
         new Array(3).fill(0).map((_, i) => Bird(this, this.birdGroup, i));
 
-        this.stats = Stats(this);
-
         // stats
-        this.iterations = {
-            count: 0,
-            text: this.add
-                .text(622, 30)
-                .setText('Iterations: 0')
-                .setScrollFactor(0),
-        };
-        this.highScore = {
-            pts: 0,
-            text: this.add
-                .text(622, 50)
-                .setText('High Score: 0')
-                .setScrollFactor(0),
-        };
-        this.score = {
-            pts: 0,
-            text: this.add
-                .text(670, 70)
-                .setText('Score: 0')
-                .setScrollFactor(0),
-        };
+        this.stats = Stats(this);
 
         // colliders
         this.physics.add.collider(this.birdGroup, this.wallGroup);
@@ -88,33 +68,20 @@ class GameScene extends Phaser.Scene {
         // camera
         this.cameras.main.startFollow(this.birds[0], true, 1, 0);
 
-        this.paused = false;
+        // pause listener
         this.input.keyboard.on('keydown_P', this.togglePause.bind(this));
+        // this.pauseGame();
     }
 
     update(time, delta) {
-        this.updateWalls();
-        this.updateScore();
+        if (!this.paused) {
+            this.updateWalls();
+            this.stats.incrementScore();
+        }
     }
 
     updateWalls(minX = -160) {
         this.wallPairs.forEach(pair => pair.update(minX));
-    }
-
-    updateScore() {
-        if (!this.paused) {
-            this.score.text.setText(`Score: ${this.score.pts++}`);
-        }
-    }
-
-    updateHighScore() {
-        this.highScore.pts = Math.max(this.score.pts, this.highScore.pts);
-        this.highScore.text.setText(`High Score: ${this.highScore.pts}`);
-    }
-
-    updateIterations() {
-        this.iterations.count++;
-        this.iterations.text.setText(`Iterations: ${this.iterations.count}`);
     }
 
     killBird(object1, object2) {
@@ -142,10 +109,7 @@ class GameScene extends Phaser.Scene {
     }
 
     resetGame() {
-        this.updateIterations();
-        this.updateHighScore();
-        this.score.pts = 0;
-        this.updateScore();
+        this.stats.updateIterationsAndHighScore();
         this.updateWalls(600);
         this.resetBirds();
     }
