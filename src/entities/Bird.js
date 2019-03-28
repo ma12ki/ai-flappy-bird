@@ -1,17 +1,20 @@
 import Phaser from 'phaser';
 
 const hsv = Phaser.Display.Color.HSVColorWheel();
+// const gravity = 2000;
 
 const Bird = (game, group, index) => {
     const sprite = group.create(300, 300, 'bird');
+    let hsvAngle = Phaser.Math.Between(0, 359);
+    let velocity = [0, 0];
 
-    sprite.setTint(hsv[Phaser.Math.Between(0, 359)].color);
+    sprite.setTint(hsv[hsvAngle].color);
 
     sprite.setCollideWorldBounds(true);
     sprite.setGravityY(2000);
     sprite.body.onCollide = true;
     sprite.body.onWorldBounds = true;
-    sprite.body.velocity.setTo(0, 0);
+    sprite.body.velocity.setTo(...velocity);
 
     // extra attrs
 
@@ -38,6 +41,17 @@ const Bird = (game, group, index) => {
         sprite.visible = true;
 
         sprite.alive = true;
+    };
+
+    sprite.pause = () => {
+        velocity = [sprite.body.velocity.x, sprite.body.velocity.y];
+        sprite.body.velocity.setTo(0, 0);
+        sprite.body.allowGravity = false;
+    };
+
+    sprite.unpause = () => {
+        sprite.body.velocity.setTo(...velocity);
+        sprite.body.allowGravity = true;
     };
 
     return sprite;

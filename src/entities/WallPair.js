@@ -1,11 +1,13 @@
 // let _id = 0;
 
+const velocityX = -140;
+
 const WallPair = (game, group, x, y = getRandomY()) => {
     const top = group.create(x, calcTopPartY(y), 'wall');
     const bottom = group.create(x, calcBottomPartY(y), 'wall');
 
-    top.body.setVelocityX(-140);
-    bottom.body.setVelocityX(-140);
+    top.body.setVelocityX(velocityX);
+    bottom.body.setVelocityX(velocityX);
 
     top.body.immovable = true;
     bottom.body.immovable = true;
@@ -36,7 +38,17 @@ const WallPair = (game, group, x, y = getRandomY()) => {
         }
     };
 
-    return { top, bottom, update };
+    const pause = () => {
+        top.body.setVelocityX(0);
+        bottom.body.setVelocityX(0);
+    };
+
+    const unpause = () => {
+        top.body.setVelocityX(velocityX);
+        bottom.body.setVelocityX(velocityX);
+    };
+
+    return { top, bottom, update, pause, unpause };
 };
 
 const getRandomY = () => Math.floor(Math.random() * 500 + 100);

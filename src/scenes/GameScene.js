@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 
 import Bird from '../entities/Bird';
 import WallPair from '../entities/WallPair';
+import Stats from '../entities/Stats';
 
 class GameScene extends Phaser.Scene {
     constructor() {
@@ -52,6 +53,8 @@ class GameScene extends Phaser.Scene {
         this.birdGroup = this.physics.add.group();
         new Array(3).fill(0).map((_, i) => Bird(this, this.birdGroup, i));
 
+        this.stats = Stats(this);
+
         // stats
         this.iterations = {
             count: 0,
@@ -84,6 +87,9 @@ class GameScene extends Phaser.Scene {
 
         // camera
         this.cameras.main.startFollow(this.birds[0], true, 1, 0);
+
+        this.paused = false;
+        this.input.keyboard.on('keydown_P', this.togglePause.bind(this));
     }
 
     update(time, delta) {
@@ -96,7 +102,9 @@ class GameScene extends Phaser.Scene {
     }
 
     updateScore() {
-        this.score.text.setText(`Score: ${this.score.pts++}`);
+        if (!this.paused) {
+            this.score.text.setText(`Score: ${this.score.pts++}`);
+        }
     }
 
     updateHighScore() {
@@ -144,6 +152,26 @@ class GameScene extends Phaser.Scene {
 
     resetBirds() {
         this.birds.forEach(bird => bird.resurrect());
+    }
+
+    togglePause() {
+        if (this.paused) {
+            this.unpauseGame();
+        } else {
+            this.pauseGame();
+        }
+    }
+
+    pauseGame() {
+        this.birds.forEach(bird => bird.pause());
+        this.wallPairs.forEach(pair => pair.pause());
+        this.paused = true;
+    }
+
+    unpauseGame() {
+        this.birds.forEach(bird => bird.unpause());
+        this.wallPairs.forEach(pair => pair.unpause());
+        this.paused = false;
     }
 }
 
