@@ -23,7 +23,7 @@ const config = {
                 left: false,
                 right: false,
             },
-            debug: true,
+            // debug: true,
         },
     },
     scene: GameScene,

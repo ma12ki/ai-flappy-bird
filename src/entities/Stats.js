@@ -1,6 +1,6 @@
 const Stats = game => {
-    // const shape = game.add.rectangle(600, 300, 200, 600, 0x000000);
-    // shape.setAlpha(0.2);
+    const shape = game.add.rectangle(600, 300, 200, 600, 0x000000);
+    shape.setAlpha(0.2);
     // console.log(shape);
 
     let iterations = 0;

@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 
+import { POPULATION_SIZE } from '../config';
 import Bird from '../entities/Bird';
 import WallPair from '../entities/WallPair';
 import Stats from '../entities/Stats';
+import GA from '../GeneticAlgorithm';
 
 class GameScene extends Phaser.Scene {
     constructor() {
@@ -53,7 +55,9 @@ class GameScene extends Phaser.Scene {
 
         // birds
         this.birdGroup = this.physics.add.group();
-        new Array(3).fill(0).map((_, i) => Bird(this, this.birdGroup, i));
+        new Array(POPULATION_SIZE)
+            .fill(0)
+            .map((_, i) => Bird(this, this.birdGroup, GA.brain(), i));
 
         // stats
         this.stats = Stats(this);
@@ -70,18 +74,45 @@ class GameScene extends Phaser.Scene {
 
         // pause listener
         this.input.keyboard.on('keydown_P', this.togglePause.bind(this));
-        // this.pauseGame();
+        this.pauseGame();
+
+        // evolve listener
+        this.input.keyboard.on('keydown_E', this.nextGeneration.bind(this));
     }
 
     update(time, delta) {
         if (!this.paused) {
             this.updateWalls();
             this.stats.incrementScore();
+            this.aiMove();
         }
     }
 
     updateWalls(minX = -160) {
         this.wallPairs.forEach(pair => pair.update(minX));
+    }
+
+    aiMove() {
+        const wallCoords = this.getNextWallCoords();
+
+        this.birds.forEach(bird => bird.aiMove(wallCoords));
+    }
+
+    getNextWallCoords() {
+        return this.wallPairs
+            .map(pair => pair.getGapCenterCoords())
+            .filter(({ x }) => x > Bird.startX)
+            .reduce(
+                (min, coords) => {
+                    if (coords.x < min.x) {
+                        return coords;
+                    }
+                    return min;
+                },
+                {
+                    x: Infinity,
+                },
+            );
     }
 
     killBird(object1, object2) {
@@ -96,7 +127,7 @@ class GameScene extends Phaser.Scene {
                 bird === object2 ||
                 (object1.gameObject && object1.gameObject === bird)
             ) {
-                bird.kill();
+                bird.kill(this.stats.score);
                 return;
             }
 
@@ -106,6 +137,20 @@ class GameScene extends Phaser.Scene {
         if (!hasAliveBirds) {
             this.resetGame();
         }
+    }
+
+    killBirds() {
+        this.birds.forEach(bird => {
+            if (bird.alive) {
+                bird.kill(this.stats.score);
+            }
+        });
+    }
+
+    nextGeneration() {
+        this.killBirds();
+        this.resetGame();
+        GA.evolveBrains();
     }
 
     resetGame() {

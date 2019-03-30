@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
 
+import WallPair from './WallPair';
+
 const hsv = Phaser.Display.Color.HSVColorWheel();
 // const gravity = 2000;
+const startX = 300;
+const startY = 300;
 
-const Bird = (game, group, index) => {
-    const sprite = group.create(300, 300, 'bird');
+const Bird = (game, group, brain, index) => {
+    const sprite = group.create(startX, startY, 'bird');
     let hsvAngle = Phaser.Math.Between(0, 359);
     let velocity = [0, 0];
 
@@ -19,17 +23,23 @@ const Bird = (game, group, index) => {
     // extra attrs
 
     sprite.flap = () => {
-        sprite.body.setVelocityY(-400 + Math.random() * 30 * (index + 1));
+        sprite.body.setVelocityY(-400);
     };
 
-    game.input.keyboard.on('keydown_SPACE', sprite.flap);
+    sprite.flapRandom = () => {
+        sprite.body.setVelocityY(-400 + Math.random() * 50);
+    };
+
+    game.input.keyboard.on('keydown_SPACE', sprite.flapRandom);
 
     sprite.alive = true;
 
-    sprite.kill = () => {
+    sprite.kill = score => {
         sprite.body.enable = false;
         sprite.visible = false;
 
+        sprite.score = score;
+        sprite.brain.score = score;
         sprite.alive = false;
     };
 
@@ -40,6 +50,7 @@ const Bird = (game, group, index) => {
         sprite.body.enable = true;
         sprite.visible = true;
 
+        sprite.score = 0;
         sprite.alive = true;
     };
 
@@ -54,7 +65,31 @@ const Bird = (game, group, index) => {
         sprite.body.allowGravity = true;
     };
 
+    // AI
+
+    sprite.brain = brain;
+
+    sprite.aiMove = wallCoords => {
+        if (!sprite.alive) {
+            return;
+        }
+        const distance = {
+            x: wallCoords.x - sprite.x + WallPair.halfWallWidth,
+            y: wallCoords.y - sprite.y,
+        };
+
+        if (sprite.brain.shouldFlap(distance)) {
+            sprite.flap();
+        }
+    };
+
+    sprite.swapBrain = brain => {
+        sprite.brain = brain;
+    };
+
     return sprite;
 };
+
+Bird.startX = startX;
 
 export default Bird;
