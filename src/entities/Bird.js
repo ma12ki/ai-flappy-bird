@@ -1,56 +1,77 @@
 import Phaser from 'phaser';
 
-import WallPair from './WallPair';
-
 const hsv = Phaser.Display.Color.HSVColorWheel();
 // const gravity = 2000;
-const startX = 300;
+const startX = 200;
 const startY = 300;
 
-const Bird = (game, group, brain, index) => {
+const Bird = (game, group, brain, position) => {
     const sprite = group.create(startX, startY, 'bird');
     let hsvAngle = Phaser.Math.Between(0, 359);
     let velocity = [0, 0];
 
     sprite.setTint(hsv[hsvAngle].color);
+    sprite.hsvAngle = hsvAngle;
+    sprite.setAlpha(0.8);
 
     sprite.setCollideWorldBounds(true);
     sprite.setGravityY(2000);
     sprite.body.onCollide = true;
     sprite.body.onWorldBounds = true;
     sprite.body.velocity.setTo(...velocity);
+    sprite.body.immovable = true;
+
+    // const debugLine = game.add.line(startX, startY, 0, 0, 140, 0, hsv[hsvAngle].color);
 
     // extra attrs
 
     sprite.flap = () => {
-        sprite.body.setVelocityY(-400);
+        if (!game.paused) {
+            sprite.body.setVelocityY(-400);
+        }
     };
 
     sprite.flapRandom = () => {
-        sprite.body.setVelocityY(-400 + Math.random() * 50);
+        if (!game.paused) {
+            sprite.body.setVelocityY(-400 + Math.random() * 50);
+        }
     };
 
     game.input.keyboard.on('keydown_SPACE', sprite.flapRandom);
 
+    sprite.score = 0;
     sprite.alive = true;
+    sprite.position = position;
 
-    sprite.kill = score => {
-        sprite.body.enable = false;
-        sprite.visible = false;
+    sprite.incrementScore = score => {
+        sprite.score++;
+        sprite.brain.score++;
+    };
 
+    sprite.setScore = score => {
         sprite.score = score;
         sprite.brain.score = score;
+    };
+
+    sprite.kill = () => {
+        sprite.x = startX;
+        sprite.y = startY;
+        sprite.body.enable = false;
+        sprite.visible = false;
+        sprite.body.setVelocity(0, 0);
+
+        // sprite.setScore(score);
         sprite.alive = false;
     };
 
     sprite.resurrect = () => {
-        sprite.x = 300;
-        sprite.y = 300;
+        sprite.x = startX;
+        sprite.y = startY;
         sprite.body.setVelocity(0, 0);
         sprite.body.enable = true;
         sprite.visible = true;
 
-        sprite.score = 0;
+        sprite.setScore(0);
         sprite.alive = true;
     };
 
@@ -74,22 +95,19 @@ const Bird = (game, group, brain, index) => {
             return;
         }
         const distance = {
-            x: wallCoords.x - sprite.x + WallPair.halfWallWidth,
+            x: wallCoords.x - sprite.x,
             y: wallCoords.y - sprite.y,
         };
 
-        if (sprite.brain.shouldFlap(distance)) {
+        if (sprite.brain.shouldFlap(distance, sprite.y)) {
             sprite.flap();
         }
-    };
-
-    sprite.swapBrain = brain => {
-        sprite.brain = brain;
     };
 
     return sprite;
 };
 
 Bird.startX = startX;
+Bird.startY = startY;
 
 export default Bird;

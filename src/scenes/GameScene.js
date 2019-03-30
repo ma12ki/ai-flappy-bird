@@ -39,17 +39,17 @@ class GameScene extends Phaser.Scene {
             WallPair(
                 this,
                 this.wallGroup,
-                Math.floor(600 + Math.random() * 100),
+                Math.floor(400 + Math.random() * 100),
             ),
             WallPair(
                 this,
                 this.wallGroup,
-                Math.floor(1000 + Math.random() * 200),
+                Math.floor(800 + Math.random() * 100),
             ),
             WallPair(
                 this,
                 this.wallGroup,
-                Math.floor(1500 + Math.random() * 300),
+                Math.floor(1200 + Math.random() * 100),
             ),
         ];
 
@@ -57,7 +57,7 @@ class GameScene extends Phaser.Scene {
         this.birdGroup = this.physics.add.group();
         new Array(POPULATION_SIZE)
             .fill(0)
-            .map((_, i) => Bird(this, this.birdGroup, GA.brain(), i));
+            .map((_, i) => Bird(this, this.birdGroup, GA.brain(), i + 1));
 
         // stats
         this.stats = Stats(this);
@@ -70,7 +70,8 @@ class GameScene extends Phaser.Scene {
         this.physics.world.on('worldbounds', this.killBird.bind(this));
 
         // camera
-        this.cameras.main.startFollow(this.birds[0], true, 1, 0);
+        // this.cameras.main.startFollow(this.birds[0], true, 1, 0);
+        this.cameras.main.centerOn(400, 300);
 
         // pause listener
         this.input.keyboard.on('keydown_P', this.togglePause.bind(this));
@@ -78,12 +79,14 @@ class GameScene extends Phaser.Scene {
 
         // evolve listener
         this.input.keyboard.on('keydown_E', this.nextGeneration.bind(this));
+
+        this.input.keyboard.on('keydown_R', this.nextGeneration.bind(this));
     }
 
     update(time, delta) {
         if (!this.paused) {
             this.updateWalls();
-            this.stats.incrementScore();
+            this.updateScores();
             this.aiMove();
         }
     }
@@ -99,6 +102,23 @@ class GameScene extends Phaser.Scene {
     }
 
     getNextWallCoords() {
+        // const nextWall = this.wallPairs
+        //     .filter(pair => pair.getGapCenterCoords().x > Bird.startX)
+        //     .reduce((closest, pair) => {
+        //         if (!closest) {
+        //             return pair;
+        //         }
+        //         if (
+        //             pair.getGapCenterCoords().x < closest.getGapCenterCoords().x
+        //         ) {
+        //             return pair;
+        //         }
+        //         return closest;
+        //     });
+
+        // nextWall.highlight();
+
+        // return nextWall.getGapCenterCoords();
         return this.wallPairs
             .map(pair => pair.getGapCenterCoords())
             .filter(({ x }) => x > Bird.startX)
@@ -123,11 +143,12 @@ class GameScene extends Phaser.Scene {
                 return;
             }
             if (
-                bird === object1 ||
-                bird === object2 ||
-                (object1.gameObject && object1.gameObject === bird)
+                (bird === object1 ||
+                    bird === object2 ||
+                    (object1.gameObject && object1.gameObject === bird)) &&
+                bird.score > 0
             ) {
-                bird.kill(this.stats.score);
+                bird.kill();
                 return;
             }
 
@@ -135,26 +156,57 @@ class GameScene extends Phaser.Scene {
         });
 
         if (!hasAliveBirds) {
-            this.resetGame();
+            this.nextGeneration();
+        } else {
+            this.updatePositions();
         }
     }
 
     killBirds() {
         this.birds.forEach(bird => {
             if (bird.alive) {
-                bird.kill(this.stats.score);
+                bird.kill();
             }
         });
+        this.updatePositions();
+    }
+
+    updateScores() {
+        this.birds
+            .filter(({ alive }) => alive)
+            .forEach(bird => bird.incrementScore());
+        this.stats.updateScores();
+    }
+
+    updatePositions() {
+        this.birds
+            .sort((a, b) => {
+                const scoreA = a.score + (a.alive ? 10 : -10);
+                const scoreB = b.score + (b.alive ? 10 : -10);
+
+                return scoreB - scoreA;
+            })
+            .forEach((bird, i) => {
+                bird.position = i + 1;
+            });
+        this.stats.updatePositions();
+    }
+
+    updateStatuses() {
+        this.stats.updateStatuses();
     }
 
     nextGeneration() {
         this.killBirds();
-        this.resetGame();
         GA.evolveBrains();
+        this.resetGame();
+        this.updateStatuses();
     }
 
     resetGame() {
-        this.stats.updateIterationsAndHighScore();
+        this.stats.updateGenerationAndHighScore(
+            this.birds.reduce((max, bird) => Math.max(max, bird.score), 0),
+        );
         this.updateWalls(600);
         this.resetBirds();
     }

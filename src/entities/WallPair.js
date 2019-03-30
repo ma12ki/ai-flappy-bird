@@ -2,7 +2,7 @@
 
 const velocityX = -140;
 const halfWallHeight = 400;
-const halfGapHeight = 60;
+const halfGapHeight = 70;
 const halfWallWidth = 30;
 
 const WallPair = (game, group, x, y = getRandomCenterY()) => {
@@ -42,7 +42,7 @@ const WallPair = (game, group, x, y = getRandomCenterY()) => {
     };
 
     const getGapCenterCoords = () => {
-        return { x: top.x, y };
+        return { x: top.x + halfWallWidth, y };
     };
 
     const pause = () => {
@@ -55,7 +55,20 @@ const WallPair = (game, group, x, y = getRandomCenterY()) => {
         bottom.body.setVelocityX(velocityX);
     };
 
-    return { top, bottom, update, getGapCenterCoords, pause, unpause };
+    const highlight = () => {
+        top.setTint(0xff00ff);
+        bottom.setTint(0xff00ff);
+    };
+
+    return {
+        top,
+        bottom,
+        update,
+        getGapCenterCoords,
+        pause,
+        unpause,
+        highlight,
+    };
 };
 
 const getRandomCenterY = () => {
@@ -69,7 +82,5 @@ const calcBottomPartY = centerY => centerY + halfWallHeight + halfGapHeight;
 const isValidX = (x, minX = -160) => x > minX && x < 1800;
 const getRandomX = lowerBound =>
     lowerBound + Math.floor(400 + Math.random() * 100);
-
-WallPair.halfWallWidth = halfWallWidth;
 
 export default WallPair;

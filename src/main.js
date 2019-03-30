@@ -1,7 +1,7 @@
 import 'phaser';
-// import BootScene from './scenes/BootScene';
+
+import { SCENE_WIDTH, SCENE_HEIGHT } from './config';
 import GameScene from './scenes/GameScene';
-// import TitleScene from './scenes/TitleScene';
 
 const config = {
     // For more settings see <https://github.com/photonstorm/phaser/blob/master/src/boot/Config.js>
@@ -9,8 +9,8 @@ const config = {
     pixelArt: true,
     roundPixels: true,
     parent: 'content',
-    width: 800,
-    height: 600,
+    width: SCENE_WIDTH,
+    height: SCENE_HEIGHT,
     physics: {
         default: 'arcade',
         arcade: {
@@ -23,7 +23,7 @@ const config = {
                 left: false,
                 right: false,
             },
-            // debug: true,
+            debug: true,
         },
     },
     scene: GameScene,
