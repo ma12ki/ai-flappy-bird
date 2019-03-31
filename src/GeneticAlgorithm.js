@@ -193,7 +193,7 @@ const evolveBrains = () => {
         }
     });
 
-    all.forEach(brain => console.log(brain.ancestors));
+    // all.forEach(brain => console.log(brain.ancestors));
 };
 
 const groupWinnersAndLosers = () => {

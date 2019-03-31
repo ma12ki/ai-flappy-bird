@@ -177,10 +177,7 @@ class GameScene extends Phaser.Scene {
     }
 
     nextGeneration() {
-        console.log('NEXT GEN');
-        this.birds.forEach(bird => console.log(bird.score, bird.brain.score));
         this.killBirds();
-        this.birds.forEach(bird => console.log(bird.score, bird.brain.score));
         GA.evolveBrains();
         this.resetGame();
         this.updateOrigins();
