@@ -1,10 +1,15 @@
 import * as tf from '@tensorflow/tfjs';
 
-import { WINNERS_SIZE, SCENE_WIDTH, SCENE_HEIGHT } from './config';
+import {
+    WINNERS_SIZE,
+    // SCENE_WIDTH,
+    SCENE_HEIGHT,
+} from './config';
 
-const BRAIN_STATUS = Object.freeze({
+const BRAIN_ORIGIN = Object.freeze({
     NEW: 'new',
     MVP: 'mvp',
+    BEST: 'best ever',
     MUTATED: 'mutated',
     OFFSPRING: 'offspring',
 });
@@ -12,30 +17,26 @@ const BRAIN_STATUS = Object.freeze({
 let counter = 1;
 let brains = [];
 
-// let bestModel;
-// let bestScore = 0;
+let bestModel;
+let bestScore = 0;
 
 const brain = () => {
     const id = counter++;
     let score = 0;
     let model = makeModel();
-    let status = BRAIN_STATUS.NEW;
+    let origin = BRAIN_ORIGIN.NEW;
+    let ancestors = [];
 
     const shouldFlap = ({ x, y }, birdY) => {
-        const normX = normalize(x, -SCENE_WIDTH, SCENE_WIDTH);
-        const normY = normalize(y, -SCENE_HEIGHT, SCENE_HEIGHT);
-        const normBirdY = normalize(birdY, -SCENE_HEIGHT, SCENE_HEIGHT);
-        // const normX = x;
-        // const normY = y;
-        // const normBirdY = birdY;
+        // const normX = normalize(x, SCENE_WIDTH) * 100;
+        const normY = normalize(y, SCENE_HEIGHT) * 100;
+        // const normBirdY = normalize(birdY, SCENE_HEIGHT) * 100;
 
-        // console.log(x, y, birdY, normX, normY, normBirdY);
+        const prediction = model
+            .predict(tf.tensor([normY], [1, 1]))
+            .dataSync()[0];
 
-        return (
-            model
-                .predict(tf.tensor([normX, normY, normBirdY], [1, 3]))
-                .dataSync()[0] > 0.5
-        );
+        return prediction > 0.5;
     };
 
     const constructedBrain = {
@@ -48,11 +49,19 @@ const brain = () => {
         set score(newScore) {
             score = newScore;
         },
-        get status() {
-            return status;
+        get origin() {
+            return origin;
         },
-        set status(newStatus) {
-            status = newStatus;
+        set origin(newOrigin) {
+            if (newOrigin === BRAIN_ORIGIN.NEW) {
+                ancestors = [];
+            } else {
+                ancestors.push(origin);
+            }
+            origin = newOrigin;
+        },
+        get ancestors() {
+            return ancestors;
         },
         get model() {
             return model;
@@ -74,16 +83,17 @@ const makeModel = () => {
 
     model.add(
         tf.layers.dense({
-            inputShape: [3],
-            units: 6,
-            activation: 'relu',
+            inputShape: [1],
+            units: 10,
+            activation: 'sigmoid',
+            kernelInitializer: 'randomUniform',
+            biasInitializer: 'randomUniform',
             useBias: true,
         }),
     );
     model.add(
         tf.layers.dense({
             units: 1,
-            activation: 'relu',
         }),
     );
 
@@ -92,78 +102,98 @@ const makeModel = () => {
         loss: 'binaryCrossentropy',
     });
 
+    // printLayers(model);
+
     return model;
 };
 
 const evolveBrains = () => {
     const { winners, all } = groupWinnersAndLosers();
-    console.log(all.map(b => b.score));
     const highestScore = winners[0].score;
 
-    if (highestScore < 100) {
-        console.log('The whole population sucks. Resetting...');
+    // if the generation could not even get a few points, create new population from scratch
+    if (
+        highestScore < 100 ||
+        all.every(brain => brain.score === highestScore)
+    ) {
         return all.forEach(brain => {
-            brain.model = makeModel();
-            brain.status = BRAIN_STATUS.NEW;
+            brain.model = bestModel
+                ? Math.random() > 0.7
+                    ? bestModel
+                    : makeModel()
+                : makeModel();
+            brain.origin = BRAIN_ORIGIN.NEW;
         });
     }
 
     all.forEach((brain, i) => {
         switch (i) {
             case 0: {
-                // if (brain.score > bestScore) {
-                //     bestModel = makeModel;
-                // }
-                console.log(brain.score);
+                if (brain.score > bestScore) {
+                    bestScore = brain.score;
+                    bestModel = copyModel(brain.model);
+                }
                 // best brain moves on unchanged
-                brain.status = BRAIN_STATUS.MVP;
+                brain.origin = BRAIN_ORIGIN.MVP;
                 return;
             }
             case 1: {
-                brain.model = mutateWeights(winners[0].model, 0.05);
-                brain.status = BRAIN_STATUS.MUTATED;
+                if (bestModel === winners[0].model) {
+                    brain.model = mutateWeights(winners[0].model, 0.02);
+                    brain.origin = BRAIN_ORIGIN.MUTATED;
+                } else {
+                    brain.model = bestModel;
+                    brain.origin = BRAIN_ORIGIN.BEST;
+                }
                 return;
             }
             case 2: {
-                brain.model = mutateWeights(winners[0].model, 0.1);
-                brain.status = BRAIN_STATUS.MUTATED;
+                brain.model = mutateWeights(winners[0].model, 0.02);
+                brain.origin = BRAIN_ORIGIN.MUTATED;
                 return;
             }
             case 3: {
-                brain.model = mutateWeights(winners[0].model, 0.2);
-                brain.status = BRAIN_STATUS.MUTATED;
+                brain.model = mutateWeights(winners[0].model, 0.05);
+                brain.origin = BRAIN_ORIGIN.MUTATED;
                 return;
             }
-            case 4:
-            case 5: {
+            case 4: {
+                brain.model = mutateWeights(winners[0].model, 0.1);
+                brain.origin = BRAIN_ORIGIN.MUTATED;
+                return;
+            }
+            case 5:
+            case 6: {
                 brain.model = mutateWeights(
                     combineWeights(
                         winners[0].model,
                         randomArrayElem(winners).model,
                     ),
-                    0.2,
+                    0.1,
                 );
-                brain.status = BRAIN_STATUS.OFFSPRING;
+                brain.origin = BRAIN_ORIGIN.OFFSPRING;
                 return;
             }
-            case 6:
-            case 7: {
+            case 7:
+            case 8: {
                 brain.model = mutateWeights(
                     combineWeights(
                         randomArrayElem(winners).model,
                         randomArrayElem(winners).model,
                     ),
-                    0.3,
+                    0.1,
                 );
-                brain.status = BRAIN_STATUS.OFFSPRING;
+                brain.origin = BRAIN_ORIGIN.OFFSPRING;
                 return;
             }
             default: {
                 brain.model = makeModel();
-                brain.status = BRAIN_STATUS.NEW;
+                brain.origin = BRAIN_ORIGIN.NEW;
             }
         }
     });
+
+    all.forEach(brain => console.log(brain.ancestors));
 };
 
 const groupWinnersAndLosers = () => {
@@ -184,17 +214,28 @@ const brainsByScore = () => brains.sort((a, b) => b.score - a.score);
 const randomArrayElem = array =>
     array[Math.floor(Math.random() * array.length)];
 
-const mutateWeights = (model, rate = 0.1) => {
+const mutateWeights = (model, rate = 0.01) => {
     model.layers.forEach(layer => {
         const [weights, biases] = layer.getWeights();
         const newWeights = tf.tidy(() =>
             tf
                 .randomNormal(weights.shape, 0, rate)
-                .add(weights)
+                .add(tf.scalar(1))
+                .mul(weights)
                 .clipByValue(-1, 1),
         );
+        let newBiases;
+        if (biases) {
+            newBiases = tf.tidy(() =>
+                tf
+                    .randomNormal(biases.shape, 0, rate)
+                    .add(tf.scalar(1))
+                    .mul(biases)
+                    .clipByValue(-1, 1),
+            );
+        }
 
-        layer.setWeights([newWeights, biases]);
+        layer.setWeights([newWeights, newBiases]);
     });
 
     return model;
@@ -205,10 +246,8 @@ const combineWeights = (model1, model2) => {
     const layerCount = model.layers.length;
 
     for (let i = 0; i < layerCount; i++) {
-        // eslint-disable-next-line no-unused-vars
-        const [_, biases] = model.layers[i].getWeights();
-        const [weights1] = model1.layers[i].getWeights();
-        const [weights2] = model2.layers[i].getWeights();
+        const [weights1, biases1] = model1.layers[i].getWeights();
+        const [weights2, biases2] = model2.layers[i].getWeights();
         const newWeights = tf.tidy(() =>
             tf
                 .clone(weights1)
@@ -216,33 +255,52 @@ const combineWeights = (model1, model2) => {
                 .div(tf.scalar(2))
                 .clipByValue(-1, 1),
         );
+        let newBiases;
+        if (biases1) {
+            newBiases = tf.tidy(() =>
+                tf
+                    .clone(biases1)
+                    .add(biases2)
+                    .div(tf.scalar(2))
+                    .clipByValue(-1, 1),
+            );
+        }
 
-        model.layers[i].setWeights([newWeights, biases]);
+        model.layers[i].setWeights([newWeights, newBiases]);
     }
 
     return model;
 };
 
-// const copyModel = model => {
-//     const copy = makeModel();
-
-//     model.layers.forEach((layer, i) => {
+// const printLayers = model =>
+//     model.layers.forEach(layer => {
 //         const [weights, biases] = layer.getWeights();
-
-//         copy.layers[i].setWeights([weights, biases]);
+//         weights.print();
+//         if (biases) {
+//             biases.print();
+//         }
 //     });
 
-//     return copy;
-// };
+const copyModel = model => {
+    const copy = makeModel();
 
-const normalize = (value, min, max) => {
-    if (value < min) {
-        value = min;
+    model.layers.forEach((layer, i) => {
+        const [weights, biases] = layer.getWeights();
+
+        copy.layers[i].setWeights([weights, biases]);
+    });
+
+    return copy;
+};
+
+const normalize = (value, max) => {
+    if (value < -max) {
+        value = -max;
     }
     if (value > max) {
         value = max;
     }
-    return (value / max) * 100;
+    return value / max;
 };
 
 export default { brain, evolveBrains };

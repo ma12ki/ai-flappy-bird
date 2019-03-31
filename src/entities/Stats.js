@@ -60,8 +60,8 @@ const Stats = game => {
     const updateScores = () => {
         items.forEach(item => item.updateScore());
     };
-    const updateStatuses = () => {
-        items.forEach(item => item.updateStatus());
+    const updateOrigins = () => {
+        items.forEach(item => item.updateOrigin());
     };
 
     return {
@@ -79,7 +79,7 @@ const Stats = game => {
         updateGenerationAndHighScore,
         updatePositions,
         updateScores,
-        updateStatuses,
+        updateOrigins,
     };
 };
 
@@ -110,11 +110,11 @@ const StatsItem = (game, bird) => {
         })
         .setScrollFactor(0);
 
-    const statusLabel = game.add
+    const originLabel = game.add
         .text(
             containerX - 30,
             40 + position * 50,
-            `Status: ${bird.brain.status}`,
+            `Origin: ${bird.brain.origin}`,
             {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 12,
@@ -129,7 +129,7 @@ const StatsItem = (game, bird) => {
             positionLabel.setText(position);
             positionLabel.y = 35 + position * 50;
             scoreLabel.y = 25 + position * 50;
-            statusLabel.y = 40 + position * 50;
+            originLabel.y = 40 + position * 50;
         }
     };
     const updateScore = () => {
@@ -138,14 +138,14 @@ const StatsItem = (game, bird) => {
             scoreLabel.setText(`Score: ${score}`);
         }
     };
-    const updateStatus = () => {
-        statusLabel.setText(bird.brain.status);
+    const updateOrigin = () => {
+        originLabel.setText(`Origin: ${bird.brain.origin}`);
     };
 
     return {
         updatePosition,
         updateScore,
-        updateStatus,
+        updateOrigin,
     };
 };
 

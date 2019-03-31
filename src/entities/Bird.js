@@ -21,8 +21,6 @@ const Bird = (game, group, brain, position) => {
     sprite.body.velocity.setTo(...velocity);
     sprite.body.immovable = true;
 
-    // const debugLine = game.add.line(startX, startY, 0, 0, 140, 0, hsv[hsvAngle].color);
-
     // extra attrs
 
     sprite.flap = () => {
@@ -54,13 +52,10 @@ const Bird = (game, group, brain, position) => {
     };
 
     sprite.kill = () => {
-        sprite.x = startX;
-        sprite.y = startY;
         sprite.body.enable = false;
         sprite.visible = false;
         sprite.body.setVelocity(0, 0);
 
-        // sprite.setScore(score);
         sprite.alive = false;
     };
 

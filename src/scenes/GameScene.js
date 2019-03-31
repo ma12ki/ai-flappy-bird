@@ -39,17 +39,17 @@ class GameScene extends Phaser.Scene {
             WallPair(
                 this,
                 this.wallGroup,
-                Math.floor(400 + Math.random() * 100),
+                Math.floor(600 + Math.random() * 100),
             ),
             WallPair(
                 this,
                 this.wallGroup,
-                Math.floor(800 + Math.random() * 100),
+                Math.floor(1000 + Math.random() * 100),
             ),
             WallPair(
                 this,
                 this.wallGroup,
-                Math.floor(1200 + Math.random() * 100),
+                Math.floor(1400 + Math.random() * 100),
             ),
         ];
 
@@ -78,9 +78,7 @@ class GameScene extends Phaser.Scene {
         this.pauseGame();
 
         // evolve listener
-        this.input.keyboard.on('keydown_E', this.nextGeneration.bind(this));
-
-        this.input.keyboard.on('keydown_R', this.nextGeneration.bind(this));
+        this.input.keyboard.on('keyup_E', this.nextGeneration.bind(this));
     }
 
     update(time, delta) {
@@ -102,23 +100,6 @@ class GameScene extends Phaser.Scene {
     }
 
     getNextWallCoords() {
-        // const nextWall = this.wallPairs
-        //     .filter(pair => pair.getGapCenterCoords().x > Bird.startX)
-        //     .reduce((closest, pair) => {
-        //         if (!closest) {
-        //             return pair;
-        //         }
-        //         if (
-        //             pair.getGapCenterCoords().x < closest.getGapCenterCoords().x
-        //         ) {
-        //             return pair;
-        //         }
-        //         return closest;
-        //     });
-
-        // nextWall.highlight();
-
-        // return nextWall.getGapCenterCoords();
         return this.wallPairs
             .map(pair => pair.getGapCenterCoords())
             .filter(({ x }) => x > Bird.startX)
@@ -168,7 +149,6 @@ class GameScene extends Phaser.Scene {
                 bird.kill();
             }
         });
-        this.updatePositions();
     }
 
     updateScores() {
@@ -192,15 +172,20 @@ class GameScene extends Phaser.Scene {
         this.stats.updatePositions();
     }
 
-    updateStatuses() {
-        this.stats.updateStatuses();
+    updateOrigins() {
+        this.stats.updateOrigins();
     }
 
     nextGeneration() {
+        console.log('NEXT GEN');
+        this.birds.forEach(bird => console.log(bird.score, bird.brain.score));
         this.killBirds();
+        this.birds.forEach(bird => console.log(bird.score, bird.brain.score));
         GA.evolveBrains();
         this.resetGame();
-        this.updateStatuses();
+        this.updateOrigins();
+        this.updatePositions();
+        // this.pauseGame();
     }
 
     resetGame() {

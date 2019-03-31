@@ -42,7 +42,7 @@ const WallPair = (game, group, x, y = getRandomCenterY()) => {
     };
 
     const getGapCenterCoords = () => {
-        return { x: top.x + halfWallWidth, y };
+        return { x: top.x + 2 * halfWallWidth, y };
     };
 
     const pause = () => {
